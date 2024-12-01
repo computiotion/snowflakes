@@ -37,7 +37,7 @@ export function generateSnowflake(time: number = Date.now(), config: Partial<Sno
 
     const timestamp = time - config.epoch;
 
-    const binaryIncrement = decimalToBinary(config.increment).padStart(12, "0"); // only available using ESLINT 2017+
+    const binaryIncrement = decimalToBinary(config.increment % 4095).padStart(12, "0"); // only available using ESLINT 2017+
     const binaryTime = decimalToBinary(timestamp).padStart(42, "0"); // only available using ESLINT 2017+
     const binaryPid = decimalToBinary(config.pid).padStart(5, "0"); // only available using ESLINT 2017+
     const binaryWorker = decimalToBinary(config.worker).padStart(5, "0"); // only available using ESLINT 2017+
