@@ -1,41 +1,43 @@
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 
 public class Snowflake {
     /**
      * The timestamp after the Unix epoch that should be the basis for all dates. Defaults to 0.
-     * 42 bits.
+     * Forty-two bits.
      */
-    private Timestamp epoch = new Timestamp(0);
+    private Timestamp epoch;
     /**
      * Internal process ID, in decimal.
      * 5 bits, max = 31.
      */
-    private Integer pid = null;
+    private Integer pid;
     /**
      * Internal worker ID, in decimal.
      * 5 bits, max = 31.
      */
-    private Integer worker = null;
+    private Integer worker;
     /**
      * Incremented for every generated ID on that process, in decimal.
      * 12 bits, max = 4095.
      */
-    private Integer increment = null;
+    private Integer increment;
 
-    @NotNull
-    @Contract(" -> new")
-    public static Snowflake fromDefaults() {
-        return new Snowflake(0L, 0, 0, 0);
-    }
-
-    public Snowflake(Long epoch, Integer increment, Integer pid, Integer worker) {
-        this.epoch = new Timestamp(0);
+    public Snowflake(@Nullable Timestamp epoch, @Nullable Integer increment, @Nullable Integer pid, @Nullable Integer worker) {
+        this.epoch = epoch;
         this.increment = increment;
         this.pid = pid;
         this.worker = worker;
+    }
+
+    public Snowflake() {
+        this.epoch = new Timestamp(0);
+        this.increment = 0;
+        this.pid = 0;
+        this.worker = 0;
     }
 
     /**
@@ -53,6 +55,8 @@ public class Snowflake {
         this.increment = increment;
         return this;
     }
+
+    public Snowflake increaseIncrement() { this.increment++; return this; }
 
     public int getWorker() {
         return worker;
@@ -77,11 +81,19 @@ public class Snowflake {
         return this;
     }
 
+    public String generate() {
+        return String.valueOf(generateAsLong(Timestamp.from(Instant.now())));
+    }
+
     public String generate(Timestamp timestamp) {
         return String.valueOf(generateAsLong(timestamp));
     }
 
-    public String generateAsLong(Timestamp timestamp) {
+    public Long generateAsLong() {
+        return generateAsLong(Timestamp.from(Instant.now()));
+    }
+
+    public Long generateAsLong(Timestamp timestamp) {
         if (epoch == null) epoch = new Timestamp(0);
         if (increment == null) increment = 0;
         if (pid == null) pid = 0;
@@ -89,11 +101,11 @@ public class Snowflake {
 
         long refTimestamp = timestamp.getTime() - epoch.getTime();
 
-        String binaryTime = Long.toBinaryString(refTimestamp);
-        String binaryWorker = Integer.toBinaryString(worker);
-        String binaryPid = Integer.toBinaryString(pid);
-        String binaryIncrement = Integer.toBinaryString(increment);
+        String binaryTime = StringUtils.leftPad(Long.toBinaryString(refTimestamp), 42, "0");
+        String binaryWorker = StringUtils.leftPad(Integer.toBinaryString(worker), 5, "0");
+        String binaryPid = StringUtils.leftPad(Integer.toBinaryString(pid), 5, "0");
+        String binaryIncrement = StringUtils.leftPad(Integer.toBinaryString(increment % 4095), 12, "0");
 
-        return String.valueOf(Long.parseLong(binaryTime + binaryWorker + binaryPid + binaryIncrement, 2));
+        return Long.parseLong(binaryTime + binaryWorker + binaryPid + binaryIncrement, 2);
     }
 }
