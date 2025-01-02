@@ -58,6 +58,8 @@ public class Snowflake {
 
     public Snowflake increaseIncrement() { this.increment++; return this; }
 
+    public Snowflake nextId() { this.increment++; generate(); }
+
     public int getWorker() {
         return worker;
     }
